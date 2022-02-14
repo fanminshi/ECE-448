@@ -48,7 +48,7 @@ class NeuralNet(nn.Module):
             nn.Linear(in_size, 32),
             nn.ReLU(),
             nn.Linear(32, out_size),
-            nn.Sigmoid(),
+            nn.ReLU(),
         )
         self.optimizer = optim.SGD(self.model.parameters(), lr=lrate)
 
@@ -106,7 +106,7 @@ def fit(train_set, train_labels, dev_set, n_iter, batch_size=100):
     @return yhats: an (M,) NumPy array of binary labels for dev_set
     @return net: a NeuralNet object
     """
-    net = NeuralNet(1e-1, nn.CrossEntropyLoss(), len(train_set[0]),  2)
+    net = NeuralNet(0.001, nn.CrossEntropyLoss(), len(train_set[0]),  2)
     losses = []
     std, mean = torch.std_mean(train_set)
     train_set_normal = (train_set - mean) / std
