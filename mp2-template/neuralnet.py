@@ -44,7 +44,13 @@ class NeuralNet(nn.Module):
         """
         super(NeuralNet, self).__init__()
         self.loss_fn = loss_fn
-        raise NotImplementedError("You need to write this part!")
+        self.model = nn.Sequential(
+            nn.Linear(in_size, 32),
+            nn.ReLU(),
+            nn.Linear(32, out_size),
+            nn.Sigmoid(),
+        )
+        self.optimizer = optim.SGD(self.model.parameters(), lr=lrate)
 
     # def set_parameters(self, params):
     #     """ Sets the parameters of your network.
@@ -66,8 +72,7 @@ class NeuralNet(nn.Module):
         @param x: an (N, in_size) Tensor
         @return y: an (N, out_size) Tensor of output from the network
         """
-        raise NotImplementedError("You need to write this part!")
-        return torch.ones(x.shape[0], 1)
+        return self.model(x)
 
     def step(self, x, y):
         """
@@ -77,9 +82,13 @@ class NeuralNet(nn.Module):
         @param y: an (N,) Tensor
         @return L: total empirical risk (mean of losses) at this timestep as a float
         """
-        raise NotImplementedError("You need to write this part!")
-        return 0.0
-
+        y_pred = self.forward(x)
+        loss = self.loss_fn(y_pred, y)
+        self.model.zero_grad()
+        loss.backward()
+        self.optimizer.step() 
+        return loss.item()
+      
 
 def fit(train_set, train_labels, dev_set, n_iter, batch_size=100):
     """ Fit a neural net. Use the full batch size.
@@ -97,5 +106,26 @@ def fit(train_set, train_labels, dev_set, n_iter, batch_size=100):
     @return yhats: an (M,) NumPy array of binary labels for dev_set
     @return net: a NeuralNet object
     """
-    raise NotImplementedError("You need to write this part!")
-    return [], [], None
+    net = NeuralNet(1e-1, nn.CrossEntropyLoss(), len(train_set[0]),  2)
+    losses = []
+    std, mean = torch.std_mean(train_set)
+    train_set_normal = (train_set - mean) / std
+
+    for epoch in range(n_iter):
+        loss = 0
+        batches_train = torch.split(train_set_normal, batch_size)
+        batches_label = torch.split(train_labels, batch_size)
+        for i in range(len(batches_train)):
+            loss = net.step(batches_train[i], batches_label[i])
+        losses.append(loss)
+    std, mean = torch.std_mean(dev_set)
+    dev_set_normal = (dev_set - mean) / std
+    
+    pred = net.forward(dev_set_normal).detach().numpy()
+    preds = []
+    for i in pred:
+        if i[0] < i[1]:
+            preds.append(1)
+        else:
+            preds.append(0)
+    return losses, preds, net
