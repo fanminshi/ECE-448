@@ -48,7 +48,6 @@ class NeuralNet(nn.Module):
             nn.Linear(in_size, 32),
             nn.ReLU(),
             nn.Linear(32, out_size),
-            nn.ReLU(),
         )
         self.optimizer = optim.SGD(self.model.parameters(), lr=lrate)
 
@@ -124,7 +123,7 @@ def fit(train_set, train_labels, dev_set, n_iter, batch_size=100):
     pred = net.forward(dev_set_normal).detach().numpy()
     preds = []
     for i in pred:
-        if i[0] < i[1]:
+        if i[1] > i[0]:
             preds.append(1)
         else:
             preds.append(0)
